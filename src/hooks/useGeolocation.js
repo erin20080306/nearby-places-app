@@ -64,11 +64,11 @@ export function useGeolocation() {
       }
     };
 
-    // 先嘗試高精度，timeout 較短
+    // 先嘗試高精度，允許用 5 分鐘內快取加速
     navigator.geolocation.getCurrentPosition(onSuccess, onError, {
       enableHighAccuracy: true,
-      timeout: 8000,
-      maximumAge: 60000,
+      timeout: 6000,
+      maximumAge: 300000,
     });
   }, []);
 

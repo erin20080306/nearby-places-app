@@ -4,9 +4,12 @@ const NOMINATIM_API = 'https://nominatim.openstreetmap.org';
 export async function searchLocation(query) {
   const url = `${NOMINATIM_API}/search?format=json&q=${encodeURIComponent(query)}&limit=5&accept-language=zh-TW`;
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
   const response = await fetch(url, {
     headers: { 'User-Agent': 'NearbyPlacesApp/1.0' },
-  });
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timer));
 
   if (!response.ok) throw new Error('搜尋服務暫時無法使用');
 

@@ -38,28 +38,37 @@ function setCache(key, data) {
   }
 }
 
-// 帶 timeout + 多節點備援的 fetch
-async function fetchOverpass(query) {
-  for (const endpoint of OVERPASS_ENDPOINTS) {
-    try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 20000);
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `data=${encodeURIComponent(query)}`,
-        signal: controller.signal,
-      });
+// 單一端點 fetch（帶 timeout）
+function fetchFromEndpoint(endpoint, query, timeoutMs = 10000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `data=${encodeURIComponent(query)}`,
+    signal: controller.signal,
+  })
+    .then((res) => {
       clearTimeout(timer);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      return data;
-    } catch (err) {
-      console.warn(`Overpass endpoint failed: ${endpoint}`, err.message);
-      continue;
-    }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    })
+    .catch((err) => {
+      clearTimeout(timer);
+      throw err;
+    });
+}
+
+// 多端點並行競速：全部同時發出，最快成功的回傳
+async function fetchOverpass(query) {
+  try {
+    const result = await Promise.any(
+      OVERPASS_ENDPOINTS.map((ep) => fetchFromEndpoint(ep, query, 10000))
+    );
+    return result;
+  } catch {
+    throw new Error('所有伺服器均無回應，請檢查網路連線後重試');
   }
-  throw new Error('所有伺服器均無回應，請檢查網路連線後重試');
 }
 
 // 從 element 取得座標（node 直接有 lat/lon，way/relation 用 center）
@@ -121,7 +130,7 @@ function buildQuery(categoryId, lat, lon, radius) {
     .join('\n');
 
   return `
-[out:json][timeout:25];
+[out:json][timeout:12];
 (
   ${filters}
 );
@@ -156,7 +165,7 @@ export async function fetchAllNearby(lat, lon, radius = 1000) {
   if (cached) return cached;
 
   const query = `
-[out:json][timeout:30];
+[out:json][timeout:12];
 (
   node["amenity"~"restaurant|fast_food|cafe|bakery|food_court|fuel|parking"](around:${radius},${lat},${lon});
   way["amenity"~"restaurant|fast_food|cafe|bakery|food_court|fuel|parking"](around:${radius},${lat},${lon});
