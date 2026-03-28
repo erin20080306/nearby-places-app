@@ -1,7 +1,36 @@
 import { CATEGORIES, detectCategory } from '../data/categories';
 import { calculateDistance } from '../utils/distance';
 
-const OVERPASS_API = 'https://overpass-api.de/api/interpreter';
+// 多個 Overpass API 節點，依序嘗試（部分 Android 手機可能擋特定節點）
+const OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+];
+
+// 帶 timeout + 多節點備援的 fetch
+async function fetchOverpass(query) {
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 20000);
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `data=${encodeURIComponent(query)}`,
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      return data;
+    } catch (err) {
+      console.warn(`Overpass endpoint failed: ${endpoint}`, err.message);
+      continue;
+    }
+  }
+  throw new Error('所有伺服器均無回應，請檢查網路連線後重試');
+}
 
 // 從 element 取得座標（node 直接有 lat/lon，way/relation 用 center）
 function getCoords(el) {
@@ -78,17 +107,7 @@ export async function fetchNearbyStores(categoryId, lat, lon, radius = 1000) {
   const query = buildQuery(categoryId, lat, lon, radius);
   if (!query) throw new Error('無效的分類');
 
-  const response = await fetch(OVERPASS_API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `data=${encodeURIComponent(query)}`,
-  });
-
-  if (!response.ok) {
-    throw new Error('無法取得店家資料，請稍後再試');
-  }
-
-  const data = await response.json();
+  const data = await fetchOverpass(query);
   return parseElements(data.elements, lat, lon);
 }
 
@@ -105,14 +124,6 @@ export async function fetchAllNearby(lat, lon, radius = 1000) {
 out center;
   `.trim();
 
-  const response = await fetch(OVERPASS_API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `data=${encodeURIComponent(query)}`,
-  });
-
-  if (!response.ok) throw new Error('無法取得店家資料');
-
-  const data = await response.json();
+  const data = await fetchOverpass(query);
   return parseElements(data.elements, lat, lon);
 }
