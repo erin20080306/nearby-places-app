@@ -7,6 +7,7 @@ import StoreList from '../components/StoreList';
 import StoreDetailModal from '../components/StoreDetailModal';
 import TrialBanner from '../components/TrialBanner';
 import ErrorBanner from '../components/ErrorBanner';
+import LocationPermissionGuide from '../components/LocationPermissionGuide';
 import { SkeletonList } from '../components/LoadingState';
 import { DEFAULT_RADIUS } from '../data/radiusOptions';
 import { searchLocation } from '../services/nominatimService';
@@ -15,6 +16,7 @@ import { Crosshair, RefreshCw } from 'lucide-react';
 export default function HomePage({
   position,
   geoError,
+  geoErrorType,
   geoLoading,
   relocate,
   stores,
@@ -31,6 +33,7 @@ export default function HomePage({
   const [searchError, setSearchError] = useState(null);
   const [detailStore, setDetailStore] = useState(null);
   const flyToRef = useRef(null);
+  const searchBarRef = useRef(null);
 
   // 定位成功後搜尋附近店家
   useEffect(() => {
@@ -93,10 +96,21 @@ export default function HomePage({
       />
 
       {/* 搜尋列 */}
-      <SearchBar onSearch={handleSearch} loading={searchLoading} />
+      <SearchBar ref={searchBarRef} onSearch={handleSearch} loading={searchLoading} />
 
-      {/* 錯誤提示 */}
-      <ErrorBanner message={geoError || searchError || storesError} onDismiss={() => setSearchError(null)} />
+      {/* 定位權限引導頁 */}
+      {geoError && !mapCenter && (
+        <LocationPermissionGuide
+          errorType={geoErrorType}
+          onRetry={relocate}
+          onManualSearch={() => searchBarRef.current?.focus()}
+        />
+      )}
+
+      {/* 非定位錯誤提示 */}
+      {(searchError || storesError) && (
+        <ErrorBanner message={searchError || storesError} onDismiss={() => setSearchError(null)} />
+      )}
 
       {/* 分類按鈕 */}
       <CategoryChips selected={category} onSelect={setCategory} />
@@ -135,7 +149,7 @@ export default function HomePage({
       )}
 
       {/* 定位中 / 載入中 */}
-      {(geoLoading || !mapCenter) && !geoError && (
+      {geoLoading && !geoError && !mapCenter && (
         <div className="flex flex-col items-center py-12">
           <div className="w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
           <p className="mt-4 text-sm text-gray-500">正在取得您的位置...</p>

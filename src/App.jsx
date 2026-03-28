@@ -72,6 +72,7 @@ export default function App() {
         <HomePage
           position={geo.position}
           geoError={geo.error}
+          geoErrorType={geo.errorType}
           geoLoading={geo.loading}
           relocate={geo.relocate}
           stores={storeHook.stores}

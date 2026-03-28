@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Search, X, Loader2, MapPin, Clock } from 'lucide-react';
 import { STORAGE_KEYS } from '../config/constants';
 import { getJSON, setJSON } from '../utils/storage';
 import { searchSuggestions } from '../services/nominatimService';
 
-export default function SearchBar({ onSearch, loading = false }) {
+const SearchBar = forwardRef(function SearchBar({ onSearch, loading = false }, ref) {
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
@@ -26,6 +26,11 @@ export default function SearchBar({ onSearch, loading = false }) {
       finally { setSugLoading(false); }
     }, 400);
   }, []);
+
+  // 讓父元件可透過 ref 呼叫 focus
+  useImperativeHandle(ref, () => ({
+    focus: () => inputRef.current?.focus(),
+  }));
 
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
@@ -157,4 +162,6 @@ export default function SearchBar({ onSearch, loading = false }) {
       )}
     </div>
   );
-}
+});
+
+export default SearchBar;
