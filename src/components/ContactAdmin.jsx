@@ -47,16 +47,19 @@ export default function ContactAdmin() {
       return;
     }
 
-    // 寄送到管理員信箱
+    // 寄送到管理員信箱（不跳轉）
     setStatus('sending');
     try {
       await fetch(FORM_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        redirect: 'manual',
         body: JSON.stringify({
           email: trimmed,
           message: message.trim() || '（使用者未填寫留言）',
           _subject: '熱愛生活 APP - 使用者聯絡',
+          _captcha: false,
+          _next: 'https://nearby-places-app.vercel.app/',
         }),
       });
     } catch {
