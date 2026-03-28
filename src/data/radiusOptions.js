@@ -8,4 +8,4 @@ export const RADIUS_OPTIONS = [
   { value: 20000, label: '20km' },
 ];
 
-export const DEFAULT_RADIUS = 1000;
+export const DEFAULT_RADIUS = 5000;
