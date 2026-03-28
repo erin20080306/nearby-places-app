@@ -41,6 +41,15 @@ export const CATEGORIES = [
     overpassTags: [{ key: 'shop', values: ['convenience', 'supermarket'] }],
   },
   {
+    id: 'parking',
+    label: '停車場',
+    icon: 'ParkingSquare',
+    gradient: 'from-sky-400 to-cyan-500',
+    lightBg: 'bg-sky-50',
+    iconColor: 'text-sky-500',
+    overpassTags: [{ key: 'amenity', values: ['parking'] }],
+  },
+  {
     id: 'shop',
     label: '一般店家',
     icon: 'ShoppingBag',
@@ -61,6 +70,7 @@ export const FILTER_OPTIONS = [
   { id: 'fuel', label: '加油站' },
   { id: 'cafe', label: '咖啡' },
   { id: 'convenience', label: '超商' },
+  { id: 'parking', label: '停車場' },
   { id: 'shop', label: '店家' },
 ];
 
@@ -78,6 +88,7 @@ export function detectCategory(tags) {
   if (['restaurant', 'fast_food', 'bakery', 'food_court'].includes(amenity)) return 'food';
   if (amenity === 'cafe') return 'cafe';
   if (amenity === 'fuel') return 'fuel';
+  if (amenity === 'parking') return 'parking';
   if (['convenience', 'supermarket'].includes(shop)) return 'convenience';
   if (amenity === 'cafe' && !shop) return 'cafe';
   return 'shop';

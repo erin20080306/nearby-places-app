@@ -20,6 +20,7 @@ const MARKER_COLORS = {
   fuel: '#3b82f6',
   cafe: '#d97706',
   convenience: '#10b981',
+  parking: '#0ea5e9',
   shop: '#8b5cf6',
 };
 

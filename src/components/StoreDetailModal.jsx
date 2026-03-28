@@ -1,13 +1,13 @@
 import React from 'react';
 import {
   X, Navigation, MapPin, Clock, Phone, Globe, Tag,
-  UtensilsCrossed, Fuel, Coffee, Store, ShoppingBag, Heart,
+  UtensilsCrossed, Fuel, Coffee, Store, ShoppingBag, ParkingSquare, Heart,
 } from 'lucide-react';
 import { getCategoryById } from '../data/categories';
 import { formatDistance } from '../utils/distance';
 import { getNavigationUrl } from '../utils/platform';
 
-const ICON_MAP = { UtensilsCrossed, Fuel, Coffee, Store, ShoppingBag };
+const ICON_MAP = { UtensilsCrossed, Fuel, Coffee, Store, ShoppingBag, ParkingSquare };
 
 export default function StoreDetailModal({ store, onClose, onFavorite, isFavorite }) {
   if (!store) return null;

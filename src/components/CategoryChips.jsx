@@ -5,6 +5,7 @@ import {
   Coffee,
   Store,
   ShoppingBag,
+  ParkingSquare,
 } from 'lucide-react';
 import { CATEGORIES } from '../data/categories';
 
@@ -14,6 +15,7 @@ const ICON_MAP = {
   Coffee,
   Store,
   ShoppingBag,
+  ParkingSquare,
 };
 
 export default function CategoryChips({ selected, onSelect }) {

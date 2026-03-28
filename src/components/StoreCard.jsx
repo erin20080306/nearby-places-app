@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  UtensilsCrossed, Fuel, Coffee, Store, ShoppingBag,
+  UtensilsCrossed, Fuel, Coffee, Store, ShoppingBag, ParkingSquare,
   Navigation, Info, Heart,
 } from 'lucide-react';
 import { getCategoryById } from '../data/categories';
@@ -8,7 +8,7 @@ import { formatDistance } from '../utils/distance';
 import { getNavigationUrl } from '../utils/platform';
 
 const ICON_MAP = {
-  UtensilsCrossed, Fuel, Coffee, Store, ShoppingBag,
+  UtensilsCrossed, Fuel, Coffee, Store, ShoppingBag, ParkingSquare,
 };
 
 export default function StoreCard({ store, onDetail, onFavorite, isFavorite, onMapFocus }) {
