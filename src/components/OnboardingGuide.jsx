@@ -1,6 +1,7 @@
 import React from 'react';
 import { MapPin, Search, Heart, Navigation } from 'lucide-react';
 import { STORAGE_KEYS } from '../config/constants';
+import ContactAdmin from './ContactAdmin';
 
 const STEPS = [
   { icon: MapPin, title: '即時定位', desc: '自動取得您的位置，顯示附近店家' },
@@ -47,17 +48,23 @@ export default function OnboardingGuide({ onComplete }) {
         </div>
       </div>
 
-      {/* 固定底部按鈕 — 永遠可見 */}
-      <div className="shrink-0 px-6 pb-8 pt-3 bg-white border-t border-gray-100">
+      {/* 固定底部 — 按鈕 + 聯絡管理員 */}
+      <div className="shrink-0 px-6 pb-8 pt-3 bg-white border-t border-gray-100 space-y-3">
         <button
           onClick={handleDone}
           className="w-full py-3.5 bg-primary-600 text-white font-semibold rounded-2xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-200 text-base"
         >
           開始使用
         </button>
-        <p className="text-center text-[11px] text-gray-400 mt-2">
+        <p className="text-center text-[11px] text-gray-400">
           免費試用 2 天，體驗完整功能
         </p>
+
+        {/* 聯絡管理員 */}
+        <div className="pt-2 border-t border-gray-100">
+          <p className="text-xs text-gray-500 mb-2 font-medium">聯絡管理員</p>
+          <ContactAdmin />
+        </div>
       </div>
     </div>
   );
