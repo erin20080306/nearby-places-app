@@ -5,11 +5,6 @@ import EmptyState from './EmptyState';
 export default function StoreList({ stores, onDetail, onFavorite, isFavorite, onMapFocus }) {
   return (
     <div className="pb-24">
-      {/* 結果數量 */}
-      <div className="px-4 py-2">
-        <p className="text-xs text-gray-400">找到 {stores.length} 間店家</p>
-      </div>
-
       {/* 卡片列表 */}
       {stores.length === 0 ? (
         <EmptyState

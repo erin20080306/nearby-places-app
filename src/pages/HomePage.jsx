@@ -11,7 +11,7 @@ import LocationPermissionGuide from '../components/LocationPermissionGuide';
 import { SkeletonList } from '../components/LoadingState';
 import { DEFAULT_RADIUS } from '../data/radiusOptions';
 import { searchLocation } from '../services/nominatimService';
-import { Crosshair, RefreshCw } from 'lucide-react';
+import { Crosshair, RefreshCw, Map, List, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function HomePage({
   position,
@@ -32,6 +32,7 @@ export default function HomePage({
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
   const [detailStore, setDetailStore] = useState(null);
+  const [showMap, setShowMap] = useState(true);
   const flyToRef = useRef(null);
   const searchBarRef = useRef(null);
 
@@ -136,8 +137,25 @@ export default function HomePage({
         </div>
       </div>
 
-      {/* 地圖 */}
-      {mapCenter && (
+      {/* 地圖/列表 切換列 + 結果數量 */}
+      <div className="flex items-center justify-between px-4 pt-1">
+        <p className="text-xs text-gray-400 font-medium">
+          {storesLoading ? '搜尋中...' : `找到 ${stores.length} 間店家`}
+        </p>
+        <button
+          onClick={() => setShowMap((v) => !v)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white shadow-sm border border-gray-100 text-gray-600 hover:bg-primary-50 transition-colors"
+        >
+          {showMap ? (
+            <><List className="w-3.5 h-3.5" />收合地圖<ChevronUp className="w-3 h-3" /></>
+          ) : (
+            <><Map className="w-3.5 h-3.5" />展開地圖<ChevronDown className="w-3 h-3" /></>
+          )}
+        </button>
+      </div>
+
+      {/* 地圖（可收合） */}
+      {showMap && mapCenter && (
         <MapView
           center={mapCenter}
           stores={stores}
@@ -169,7 +187,10 @@ export default function HomePage({
               : favorites.addFavorite(store)
           }
           isFavorite={favorites.isFavorite}
-          onMapFocus={handleMapFocus}
+          onMapFocus={(store) => {
+            setShowMap(true);
+            handleMapFocus(store);
+          }}
         />
       )}
 

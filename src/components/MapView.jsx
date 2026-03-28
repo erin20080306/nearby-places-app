@@ -67,7 +67,7 @@ export default function MapView({
   const mapCenter = center ? [center.lat, center.lon] : [25.033, 121.5654];
 
   return (
-    <div className="relative w-full h-[40vh] min-h-[240px] rounded-2xl overflow-hidden shadow-card mx-4 border border-gray-100"
+    <div className="relative w-full h-[28vh] min-h-[180px] max-h-[320px] rounded-2xl overflow-hidden shadow-card mx-4 border border-gray-100"
          style={{ width: 'calc(100% - 2rem)' }}>
       <MapContainer
         center={mapCenter}
