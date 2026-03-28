@@ -16,45 +16,46 @@ export default function OnboardingGuide({ onComplete }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-white flex flex-col">
-      <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
-        {/* Logo */}
-        <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary-500 to-teal-600 flex items-center justify-center mb-8 shadow-lg">
-          <MapPin className="w-10 h-10 text-white" />
-        </div>
-        <h1 className="text-2xl font-bold text-gray-800">歡迎使用附近探索</h1>
-        <p className="text-sm text-gray-500 mt-2 max-w-xs">
-          免費查詢附近美食、加油站、便利商店等店家資訊
-        </p>
+    <div className="fixed inset-0 z-50 bg-white flex flex-col overflow-hidden">
+      {/* 可捲動區域 */}
+      <div className="flex-1 overflow-y-auto px-6 pt-8 pb-4">
+        <div className="flex flex-col items-center text-center">
+          {/* Logo */}
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-teal-600 flex items-center justify-center mb-4 shadow-lg">
+            <MapPin className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-xl font-bold text-gray-800">歡迎使用熱愛生活</h1>
+          <p className="text-xs text-gray-500 mt-1">
+            免費查詢附近美食、加油站、便利商店等店家資訊
+          </p>
 
-        {/* 功能介紹 */}
-        <div className="mt-10 space-y-4 w-full max-w-sm">
-          {STEPS.map((step, i) => {
-            const Icon = step.icon;
-            return (
-              <div key={i} className="flex items-center gap-4 bg-gray-50 rounded-xl p-4">
-                <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-                  <Icon className="w-5 h-5 text-primary-600" />
+          {/* 功能介紹 — 緊湊 2x2 網格 */}
+          <div className="mt-5 grid grid-cols-2 gap-2.5 w-full max-w-sm">
+            {STEPS.map((step, i) => {
+              const Icon = step.icon;
+              return (
+                <div key={i} className="flex flex-col items-center bg-gray-50 rounded-xl p-3 gap-1.5">
+                  <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center">
+                    <Icon className="w-4.5 h-4.5 text-primary-600" />
+                  </div>
+                  <p className="text-xs font-semibold text-gray-700">{step.title}</p>
+                  <p className="text-[11px] text-gray-400 leading-tight">{step.desc}</p>
                 </div>
-                <div className="text-left">
-                  <p className="text-sm font-semibold text-gray-700">{step.title}</p>
-                  <p className="text-xs text-gray-500">{step.desc}</p>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* 底部按鈕 */}
-      <div className="px-8 pb-12 pt-4">
+      {/* 固定底部按鈕 — 永遠可見 */}
+      <div className="shrink-0 px-6 pb-8 pt-3 bg-white border-t border-gray-100">
         <button
           onClick={handleDone}
-          className="w-full py-4 bg-primary-600 text-white font-semibold rounded-2xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-200 text-lg"
+          className="w-full py-3.5 bg-primary-600 text-white font-semibold rounded-2xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-200 text-base"
         >
           開始使用
         </button>
-        <p className="text-center text-xs text-gray-400 mt-3">
+        <p className="text-center text-[11px] text-gray-400 mt-2">
           免費試用 2 天，體驗完整功能
         </p>
       </div>
