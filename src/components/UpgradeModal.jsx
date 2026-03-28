@@ -7,11 +7,14 @@ import PaymentSuccessState from './PaymentSuccessState';
 import { verifyPayment } from '../services/membershipService';
 
 // 升級遮罩 / 彈窗
-export default function UpgradeModal({ onClose, isPaid, polling, startPolling, fetchStatus }) {
+export default function UpgradeModal({ onClose, isPaid, isExpired, polling, startPolling, fetchStatus }) {
   const [step, setStep] = useState(isPaid ? 'success' : 'pricing'); // pricing | paypal | verify | pending | success
   const [email, setEmail] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState(null);
+
+  // 試用到期且未付費 → 鎖定模式（無法關閉）
+  const locked = isExpired && !isPaid && step !== 'success';
 
   const handlePayClick = () => setStep('paypal');
 
@@ -51,22 +54,36 @@ export default function UpgradeModal({ onClose, isPaid, polling, startPolling, f
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={step === 'success' ? onClose : undefined} />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={!locked && step === 'success' ? onClose : undefined} />
       <div className="relative w-full max-w-md mx-4 bg-cream rounded-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
-        {/* 關閉按鈕 */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        {/* 關閉按鈕（鎖定模式下隱藏） */}
+        {!locked && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
 
         <div className="py-6">
           {step === 'pricing' && (
             <div className="space-y-4">
               <div className="text-center px-6 pt-2 pb-4">
-                <h2 className="text-xl font-bold text-gray-800">升級方案</h2>
-                <p className="text-sm text-gray-500 mt-1">解鎖完整附近探索功能</p>
+                {locked ? (
+                  <>
+                    <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-orange-100 flex items-center justify-center">
+                      <span className="text-2xl">⏰</span>
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-800">免費試用已結束</h2>
+                    <p className="text-sm text-gray-500 mt-1">升級後即可繼續使用所有功能</p>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="text-xl font-bold text-gray-800">升級方案</h2>
+                    <p className="text-sm text-gray-500 mt-1">解鎖完整附近探索功能</p>
+                  </>
+                )}
               </div>
               <PricingCard onPayClick={handlePayClick} isPaid={false} />
             </div>

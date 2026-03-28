@@ -106,8 +106,13 @@ export default function App() {
       {/* 升級遮罩（到期時觸發） */}
       {showUpgradeModal && (
         <UpgradeModal
-          onClose={() => setShowUpgradeModal(false)}
+          onClose={() => {
+            // 到期且未付費 → 不允許關閉
+            if (membership.isExpired && !membership.isPaid) return;
+            setShowUpgradeModal(false);
+          }}
           isPaid={membership.isPaid}
+          isExpired={membership.isExpired}
           polling={membership.polling}
           startPolling={membership.startPolling}
           fetchStatus={membership.fetchStatus}
