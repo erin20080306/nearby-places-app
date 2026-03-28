@@ -24,16 +24,18 @@ export default function App() {
   const favorites = useFavorites();
   const membership = useMembership();
 
-  // 首次使用引導（已付費用戶跳過）
+  // 首次使用引導（等 loading 完成再判斷，已付費用戶跳過）
   useEffect(() => {
+    if (membership.loading) return; // 等會員狀態載入完成
     const done = localStorage.getItem(STORAGE_KEYS.ONBOARDING_DONE);
-    if (!done && !membership.isPaid) {
+    if (membership.isPaid) {
+      // 已付費（含 admin 解鎖）→ 永遠跳過引導
+      setShowOnboarding(false);
+      if (!done) localStorage.setItem(STORAGE_KEYS.ONBOARDING_DONE, 'true');
+    } else if (!done) {
       setShowOnboarding(true);
-    } else if (!done && membership.isPaid) {
-      // admin 解鎖用戶：自動標記引導完成
-      localStorage.setItem(STORAGE_KEYS.ONBOARDING_DONE, 'true');
     }
-  }, [membership.isPaid]);
+  }, [membership.loading, membership.isPaid]);
 
   // 引導完成後自動啟動試用
   const handleOnboardingComplete = async () => {

@@ -17,8 +17,11 @@ function getTrialRemaining(endAt) {
 }
 
 // 會員狀態管理
-export function useMembership() {
-  const [membership, setMembership] = useState({
+// 同步讀取 localStorage 快取，讓首次渲染就有正確狀態
+function getInitialMembership() {
+  const cached = getJSON(STORAGE_KEYS.MEMBERSHIP_STATUS);
+  if (cached && cached.planType) return { ...cached, userId: getDeviceId() };
+  return {
     userId: getDeviceId(),
     planType: PLAN_TYPES.NONE,
     paymentStatus: PAYMENT_STATUS.NONE,
@@ -26,7 +29,11 @@ export function useMembership() {
     trialEndAt: null,
     activatedAt: null,
     expiresAt: null,
-  });
+  };
+}
+
+export function useMembership() {
+  const [membership, setMembership] = useState(getInitialMembership);
   const [loading, setLoading] = useState(true);
   const [polling, setPolling] = useState(false);
   const pollRef = useRef(null);
