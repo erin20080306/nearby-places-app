@@ -25,6 +25,9 @@ out body;
 
 // 查詢附近店家
 export async function fetchNearbyStores(categoryId, lat, lon, radius = 1000) {
+  // 「全部」分類：搜尋所有類別
+  if (categoryId === 'all') return fetchAllNearby(lat, lon, radius);
+
   const query = buildQuery(categoryId, lat, lon, radius);
   if (!query) throw new Error('無效的分類');
 
@@ -77,7 +80,7 @@ export async function fetchAllNearby(lat, lon, radius = 1000) {
   const query = `
 [out:json][timeout:20];
 (
-  node["amenity"~"restaurant|fast_food|cafe|bakery|food_court|fuel"](around:${radius},${lat},${lon});
+  node["amenity"~"restaurant|fast_food|cafe|bakery|food_court|fuel|parking"](around:${radius},${lat},${lon});
   node["shop"~"convenience|supermarket|mall|clothes|electronics|department_store"](around:${radius},${lat},${lon});
 );
 out body;

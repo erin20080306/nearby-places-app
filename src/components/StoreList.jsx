@@ -17,20 +17,22 @@ export default function StoreList({ stores, onDetail, onFavorite, isFavorite, on
   return (
     <div className="pb-24">
       {/* 篩選標籤 */}
-      <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide">
-        {FILTER_OPTIONS.map((opt) => (
-          <button
-            key={opt.id}
-            onClick={() => setFilter(opt.id)}
-            className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all shrink-0
-              ${filter === opt.id
-                ? 'bg-primary-600 text-white'
-                : 'bg-white text-gray-500 shadow-sm hover:bg-primary-50'
-              }`}
-          >
-            {opt.label}
-          </button>
-        ))}
+      <div className="overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 px-4 py-3 w-max">
+          {FILTER_OPTIONS.map((opt) => (
+            <button
+              key={opt.id}
+              onClick={() => setFilter(opt.id)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all
+                ${filter === opt.id
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-white text-gray-500 shadow-sm hover:bg-primary-50'
+                }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 結果數量 */}

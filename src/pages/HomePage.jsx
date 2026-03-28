@@ -24,7 +24,7 @@ export default function HomePage({
   favorites,
   membership,
 }) {
-  const [category, setCategory] = useState('food');
+  const [category, setCategory] = useState('all');
   const [radius, setRadius] = useState(DEFAULT_RADIUS);
   const [mapCenter, setMapCenter] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);

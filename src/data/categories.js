@@ -3,6 +3,15 @@
 
 export const CATEGORIES = [
   {
+    id: 'all',
+    label: '全部',
+    icon: 'LayoutGrid',
+    gradient: 'from-gray-500 to-gray-600',
+    lightBg: 'bg-gray-50',
+    iconColor: 'text-gray-500',
+    overpassTags: [],
+  },
+  {
     id: 'food',
     label: '美食',
     icon: 'UtensilsCrossed',
@@ -76,7 +85,7 @@ export const FILTER_OPTIONS = [
 
 // 根據 category ID 取得分類資訊
 export function getCategoryById(id) {
-  return CATEGORIES.find((c) => c.id === id) || CATEGORIES[4];
+  return CATEGORIES.find((c) => c.id === id) || CATEGORIES[0];
 }
 
 // 根據 OSM tags 判斷分類
