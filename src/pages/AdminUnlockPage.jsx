@@ -24,6 +24,8 @@ export default function AdminUnlockPage() {
         adminUnlock: true,
       };
       setJSON(STORAGE_KEYS.MEMBERSHIP_STATUS, unlocked);
+      // 同時標記引導頁已完成，避免 PWA 重開又顯示引導 → 覆蓋解鎖
+      localStorage.setItem(STORAGE_KEYS.ONBOARDING_DONE, 'true');
       setStatus('success');
     } else {
       setStatus('error');

@@ -8,6 +8,36 @@ const OVERPASS_ENDPOINTS = [
   'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
 ];
 
+// 快取機制：相同區域 + 分類 3 分鐘內不重複查詢
+const cache = new Map();
+const CACHE_TTL = 3 * 60 * 1000; // 3 分鐘
+
+function getCacheKey(lat, lon, radius, suffix) {
+  // 將座標四捨五入到小數 3 位（約 111 公尺），相近位置共用快取
+  const rlat = Math.round(lat * 1000) / 1000;
+  const rlon = Math.round(lon * 1000) / 1000;
+  return `${rlat},${rlon},${radius},${suffix}`;
+}
+
+function getCache(key) {
+  const entry = cache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL) {
+    cache.delete(key);
+    return null;
+  }
+  return entry.data;
+}
+
+function setCache(key, data) {
+  cache.set(key, { data, ts: Date.now() });
+  // 限制快取大小
+  if (cache.size > 50) {
+    const oldest = cache.keys().next().value;
+    cache.delete(oldest);
+  }
+}
+
 // 帶 timeout + 多節點備援的 fetch
 async function fetchOverpass(query) {
   for (const endpoint of OVERPASS_ENDPOINTS) {
@@ -104,15 +134,27 @@ export async function fetchNearbyStores(categoryId, lat, lon, radius = 1000) {
   // 「全部」分類：搜尋所有類別
   if (categoryId === 'all') return fetchAllNearby(lat, lon, radius);
 
+  // 檢查快取
+  const key = getCacheKey(lat, lon, radius, categoryId);
+  const cached = getCache(key);
+  if (cached) return cached;
+
   const query = buildQuery(categoryId, lat, lon, radius);
   if (!query) throw new Error('無效的分類');
 
   const data = await fetchOverpass(query);
-  return parseElements(data.elements, lat, lon);
+  const results = parseElements(data.elements, lat, lon);
+  setCache(key, results);
+  return results;
 }
 
 // 查詢所有分類（首頁用）
 export async function fetchAllNearby(lat, lon, radius = 1000) {
+  // 檢查快取
+  const key = getCacheKey(lat, lon, radius, 'all');
+  const cached = getCache(key);
+  if (cached) return cached;
+
   const query = `
 [out:json][timeout:30];
 (
@@ -125,5 +167,7 @@ out center;
   `.trim();
 
   const data = await fetchOverpass(query);
-  return parseElements(data.elements, lat, lon);
+  const results = parseElements(data.elements, lat, lon);
+  setCache(key, results);
+  return results;
 }

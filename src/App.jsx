@@ -24,11 +24,16 @@ export default function App() {
   const favorites = useFavorites();
   const membership = useMembership();
 
-  // 首次使用引導
+  // 首次使用引導（已付費用戶跳過）
   useEffect(() => {
     const done = localStorage.getItem(STORAGE_KEYS.ONBOARDING_DONE);
-    if (!done) setShowOnboarding(true);
-  }, []);
+    if (!done && !membership.isPaid) {
+      setShowOnboarding(true);
+    } else if (!done && membership.isPaid) {
+      // admin 解鎖用戶：自動標記引導完成
+      localStorage.setItem(STORAGE_KEYS.ONBOARDING_DONE, 'true');
+    }
+  }, [membership.isPaid]);
 
   // 引導完成後自動啟動試用
   const handleOnboardingComplete = async () => {
