@@ -11,7 +11,7 @@ import LocationPermissionGuide from '../components/LocationPermissionGuide';
 import { SkeletonList } from '../components/LoadingState';
 import { DEFAULT_RADIUS } from '../data/radiusOptions';
 import { searchLocation } from '../services/nominatimService';
-import { Crosshair, RefreshCw, Map, List, ChevronDown, ChevronUp } from 'lucide-react';
+import { Crosshair, RefreshCw, Map, List, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 
 export default function HomePage({
   position,
@@ -156,14 +156,23 @@ export default function HomePage({
 
       {/* 地圖（可收合） */}
       {showMap && mapCenter && (
-        <MapView
-          center={mapCenter}
-          stores={stores}
-          userPosition={position}
-          flyToRef={flyToRef}
-          onStoreClick={(store) => setDetailStore(store)}
-          selectedStoreId={detailStore?.id}
-        />
+        <div className="relative">
+          <MapView
+            center={mapCenter}
+            stores={stores}
+            userPosition={position}
+            flyToRef={flyToRef}
+            onStoreClick={(store) => setDetailStore(store)}
+            selectedStoreId={detailStore?.id}
+          />
+          {/* 搜尋中浮動提示 */}
+          {(storesLoading || searchLoading) && (
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 bg-white/95 backdrop-blur-sm shadow-lg rounded-full px-4 py-2 border border-gray-100">
+              <Loader2 className="w-4 h-4 text-primary-600 animate-spin" />
+              <span className="text-sm font-medium text-gray-700">搜尋中...</span>
+            </div>
+          )}
+        </div>
       )}
 
       {/* 定位中 / 載入中 */}
