@@ -1,16 +1,18 @@
 import { CATEGORIES, detectCategory } from '../data/categories';
 import { calculateDistance } from '../utils/distance';
 
-// 多個 Overpass API 節點，依序嘗試（部分 Android 手機可能擋特定節點）
+// 多個 Overpass API 節點（越多越穩定，並行競速取最快）
 const OVERPASS_ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
   'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+  'https://overpass.openstreetmap.ru/api/interpreter',
+  'https://overpass-api.de/api/interpreter',           // de 權重加倍（最穩定）
 ];
 
-// 快取機制：相同區域 + 分類 3 分鐘內不重複查詢
+// 快取機制：相同區域 + 分類 5 分鐘內不重複查詢
 const cache = new Map();
-const CACHE_TTL = 3 * 60 * 1000; // 3 分鐘
+const CACHE_TTL = 5 * 60 * 1000; // 5 分鐘
 
 function getCacheKey(lat, lon, radius, suffix) {
   // 將座標四捨五入到小數 3 位（約 111 公尺），相近位置共用快取
@@ -39,7 +41,7 @@ function setCache(key, data) {
 }
 
 // 單一端點 fetch（帶 timeout）
-function fetchFromEndpoint(endpoint, query, timeoutMs = 10000) {
+function fetchFromEndpoint(endpoint, query, timeoutMs) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   return fetch(endpoint, {
@@ -60,14 +62,23 @@ function fetchFromEndpoint(endpoint, query, timeoutMs = 10000) {
 }
 
 // 多端點並行競速：全部同時發出，最快成功的回傳
+// 第一輪 15 秒，失敗後自動重試第二輪 25 秒
 async function fetchOverpass(query) {
+  // 第一輪：15 秒 timeout
   try {
-    const result = await Promise.any(
-      OVERPASS_ENDPOINTS.map((ep) => fetchFromEndpoint(ep, query, 10000))
+    return await Promise.any(
+      OVERPASS_ENDPOINTS.map((ep) => fetchFromEndpoint(ep, query, 15000))
     );
-    return result;
   } catch {
-    throw new Error('所有伺服器均無回應，請檢查網路連線後重試');
+    console.warn('Overpass 第一輪全部失敗，啟動第二輪重試...');
+  }
+  // 第二輪：25 秒 timeout（更寬鬆）
+  try {
+    return await Promise.any(
+      OVERPASS_ENDPOINTS.map((ep) => fetchFromEndpoint(ep, query, 25000))
+    );
+  } catch {
+    throw new Error('伺服器忙碌中，請稍後再試');
   }
 }
 
@@ -130,7 +141,7 @@ function buildQuery(categoryId, lat, lon, radius) {
     .join('\n');
 
   return `
-[out:json][timeout:12];
+[out:json][timeout:20];
 (
   ${filters}
 );
@@ -138,7 +149,7 @@ out center;
   `.trim();
 }
 
-// 查詢附近店家
+// 查詢附近店家（搜不到時自動擴大範圍一次）
 export async function fetchNearbyStores(categoryId, lat, lon, radius = 1000) {
   // 「全部」分類：搜尋所有類別
   if (categoryId === 'all') return fetchAllNearby(lat, lon, radius);
@@ -152,7 +163,18 @@ export async function fetchNearbyStores(categoryId, lat, lon, radius = 1000) {
   if (!query) throw new Error('無效的分類');
 
   const data = await fetchOverpass(query);
-  const results = parseElements(data.elements, lat, lon);
+  let results = parseElements(data.elements, lat, lon);
+
+  // 搜不到時自動擴大 1.5 倍範圍重試一次（上限 20km）
+  if (results.length === 0 && radius < 20000) {
+    const expanded = Math.min(Math.round(radius * 1.5), 20000);
+    const retryQuery = buildQuery(categoryId, lat, lon, expanded);
+    if (retryQuery) {
+      const retryData = await fetchOverpass(retryQuery);
+      results = parseElements(retryData.elements, lat, lon);
+    }
+  }
+
   setCache(key, results);
   return results;
 }
@@ -165,7 +187,7 @@ export async function fetchAllNearby(lat, lon, radius = 1000) {
   if (cached) return cached;
 
   const query = `
-[out:json][timeout:12];
+[out:json][timeout:20];
 (
   node["amenity"~"restaurant|fast_food|cafe|bakery|food_court|fuel|parking"](around:${radius},${lat},${lon});
   way["amenity"~"restaurant|fast_food|cafe|bakery|food_court|fuel|parking"](around:${radius},${lat},${lon});
@@ -176,7 +198,25 @@ out center;
   `.trim();
 
   const data = await fetchOverpass(query);
-  const results = parseElements(data.elements, lat, lon);
+  let results = parseElements(data.elements, lat, lon);
+
+  // 搜不到時自動擴大 1.5 倍範圍重試一次（上限 20km）
+  if (results.length === 0 && radius < 20000) {
+    const expanded = Math.min(Math.round(radius * 1.5), 20000);
+    const retryQuery = `
+[out:json][timeout:20];
+(
+  node["amenity"~"restaurant|fast_food|cafe|bakery|food_court|fuel|parking"](around:${expanded},${lat},${lon});
+  way["amenity"~"restaurant|fast_food|cafe|bakery|food_court|fuel|parking"](around:${expanded},${lat},${lon});
+  node["shop"~"convenience|supermarket|mall|clothes|electronics|department_store"](around:${expanded},${lat},${lon});
+  way["shop"~"convenience|supermarket|mall|clothes|electronics|department_store"](around:${expanded},${lat},${lon});
+);
+out center;
+    `.trim();
+    const retryData = await fetchOverpass(retryQuery);
+    results = parseElements(retryData.elements, lat, lon);
+  }
+
   setCache(key, results);
   return results;
 }

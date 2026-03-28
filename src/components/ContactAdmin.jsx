@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Mail, Send, CheckCircle, MessageSquare, Loader2 } from 'lucide-react';
+import { Mail, Send, CheckCircle, MessageSquare } from 'lucide-react';
 import { STORAGE_KEYS, PLAN_TYPES, PAYMENT_STATUS } from '../config/constants';
 import { setJSON, getDeviceId } from '../utils/storage';
 
 const UNLOCK_CODE = 'qwe811122';
-const FORM_ENDPOINT = 'https://formsubmit.co/ajax/erin20080306@gmail.com';
 
 // 簡易 email 格式驗證
 function isValidEmail(str) {
@@ -15,10 +14,10 @@ export default function ContactAdmin() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [emailError, setEmailError] = useState('');
-  const [status, setStatus] = useState('idle'); // idle | sending | sent | unlocked
+  const [status, setStatus] = useState('idle'); // idle | sent | unlocked
   const [showMessage, setShowMessage] = useState(false);
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     const trimmed = email.trim();
     if (!trimmed) return;
 
@@ -47,24 +46,12 @@ export default function ContactAdmin() {
       return;
     }
 
-    // 寄送到管理員信箱（不跳轉）
-    setStatus('sending');
-    try {
-      await fetch(FORM_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        redirect: 'manual',
-        body: JSON.stringify({
-          email: trimmed,
-          message: message.trim() || '（使用者未填寫留言）',
-          _subject: '熱愛生活 APP - 使用者聯絡',
-          _captcha: false,
-          _next: 'https://nearby-places-app.vercel.app/',
-        }),
-      });
-    } catch {
-      // 即使寄送失敗也顯示感謝（避免使用者困惑）
-    }
+    // 用 mailto 開啟郵件 app 寄信（不會跳轉外部網站）
+    const subject = encodeURIComponent('熱愛生活 APP - 使用者聯絡');
+    const body = encodeURIComponent(
+      `使用者 Email: ${trimmed}\n\n留言: ${message.trim() || '（未填寫）'}\n\n---\n送出時間: ${new Date().toLocaleString('zh-TW')}`
+    );
+    window.open(`mailto:erin20080306@gmail.com?subject=${subject}&body=${body}`, '_self');
     setStatus('sent');
   };
 
