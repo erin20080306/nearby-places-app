@@ -10,7 +10,7 @@ export default function AppLayout({ children }) {
           <MapPin className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-base font-bold text-gray-800 leading-tight">附近探索</h1>
+          <h1 className="text-base font-bold text-gray-800 leading-tight">熱愛生活</h1>
           <p className="text-[10px] text-gray-400">美食 · 加油站 · 店家</p>
         </div>
       </header>
