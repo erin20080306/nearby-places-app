@@ -69,6 +69,40 @@ export const CATEGORIES = [
       { key: 'shop', values: ['mall', 'clothes', 'electronics', 'department_store', 'yes'] },
     ],
   },
+  {
+    id: 'clinic',
+    label: '診所',
+    icon: 'Stethoscope',
+    gradient: 'from-red-400 to-rose-500',
+    lightBg: 'bg-red-50',
+    iconColor: 'text-red-500',
+    overpassTags: [
+      { key: 'amenity', values: ['clinic', 'doctors', 'dentist', 'pharmacy', 'hospital'] },
+    ],
+  },
+  {
+    id: 'hotel',
+    label: '旅社',
+    icon: 'BedDouble',
+    gradient: 'from-purple-400 to-fuchsia-500',
+    lightBg: 'bg-purple-50',
+    iconColor: 'text-purple-500',
+    overpassTags: [
+      { key: 'tourism', values: ['hotel', 'motel', 'hostel', 'guest_house'] },
+    ],
+  },
+  {
+    id: 'ktv',
+    label: 'KTV',
+    icon: 'Mic2',
+    gradient: 'from-pink-400 to-rose-500',
+    lightBg: 'bg-pink-50',
+    iconColor: 'text-pink-500',
+    overpassTags: [
+      { key: 'amenity', values: ['karaoke_box', 'karaoke'] },
+      { key: 'leisure', values: ['karaoke'] },
+    ],
+  },
 ];
 
 // 列表篩選選項
@@ -81,6 +115,9 @@ export const FILTER_OPTIONS = [
   { id: 'convenience', label: '超商' },
   { id: 'parking', label: '停車場' },
   { id: 'shop', label: '店家' },
+  { id: 'clinic', label: '診所' },
+  { id: 'hotel', label: '旅社' },
+  { id: 'ktv', label: 'KTV' },
 ];
 
 // 根據 category ID 取得分類資訊
@@ -94,11 +131,16 @@ export function detectCategory(tags) {
   const amenity = tags.amenity || '';
   const shop = tags.shop || '';
 
+  const tourism = tags.tourism || '';
+  const leisure = tags.leisure || '';
+
   if (['restaurant', 'fast_food', 'bakery', 'food_court'].includes(amenity)) return 'food';
   if (amenity === 'cafe') return 'cafe';
   if (amenity === 'fuel') return 'fuel';
   if (amenity === 'parking') return 'parking';
   if (['convenience', 'supermarket'].includes(shop)) return 'convenience';
-  if (amenity === 'cafe' && !shop) return 'cafe';
+  if (['clinic', 'doctors', 'dentist', 'pharmacy', 'hospital'].includes(amenity)) return 'clinic';
+  if (['hotel', 'motel', 'hostel', 'guest_house'].includes(tourism)) return 'hotel';
+  if (['karaoke_box', 'karaoke'].includes(amenity) || leisure === 'karaoke') return 'ktv';
   return 'shop';
 }

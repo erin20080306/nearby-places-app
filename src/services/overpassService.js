@@ -186,34 +186,28 @@ export async function fetchAllNearby(lat, lon, radius = 1000) {
   const cached = getCache(key);
   if (cached) return cached;
 
-  const query = `
+  const allQuery = (r) => `
 [out:json][timeout:20];
 (
-  node["amenity"~"restaurant|fast_food|cafe|bakery|food_court|fuel|parking"](around:${radius},${lat},${lon});
-  way["amenity"~"restaurant|fast_food|cafe|bakery|food_court|fuel|parking"](around:${radius},${lat},${lon});
-  node["shop"~"convenience|supermarket|mall|clothes|electronics|department_store"](around:${radius},${lat},${lon});
-  way["shop"~"convenience|supermarket|mall|clothes|electronics|department_store"](around:${radius},${lat},${lon});
+  node["amenity"~"restaurant|fast_food|cafe|bakery|food_court|fuel|parking|clinic|doctors|dentist|pharmacy|hospital|karaoke_box|karaoke"](around:${r},${lat},${lon});
+  way["amenity"~"restaurant|fast_food|cafe|bakery|food_court|fuel|parking|clinic|doctors|dentist|pharmacy|hospital|karaoke_box|karaoke"](around:${r},${lat},${lon});
+  node["shop"~"convenience|supermarket|mall|clothes|electronics|department_store"](around:${r},${lat},${lon});
+  way["shop"~"convenience|supermarket|mall|clothes|electronics|department_store"](around:${r},${lat},${lon});
+  node["tourism"~"hotel|motel|hostel|guest_house"](around:${r},${lat},${lon});
+  way["tourism"~"hotel|motel|hostel|guest_house"](around:${r},${lat},${lon});
+  node["leisure"="karaoke"](around:${r},${lat},${lon});
+  way["leisure"="karaoke"](around:${r},${lat},${lon});
 );
 out center;
   `.trim();
 
-  const data = await fetchOverpass(query);
+  const data = await fetchOverpass(allQuery(radius));
   let results = parseElements(data.elements, lat, lon);
 
   // 搜不到時自動擴大 1.5 倍範圍重試一次（上限 20km）
   if (results.length === 0 && radius < 20000) {
     const expanded = Math.min(Math.round(radius * 1.5), 20000);
-    const retryQuery = `
-[out:json][timeout:20];
-(
-  node["amenity"~"restaurant|fast_food|cafe|bakery|food_court|fuel|parking"](around:${expanded},${lat},${lon});
-  way["amenity"~"restaurant|fast_food|cafe|bakery|food_court|fuel|parking"](around:${expanded},${lat},${lon});
-  node["shop"~"convenience|supermarket|mall|clothes|electronics|department_store"](around:${expanded},${lat},${lon});
-  way["shop"~"convenience|supermarket|mall|clothes|electronics|department_store"](around:${expanded},${lat},${lon});
-);
-out center;
-    `.trim();
-    const retryData = await fetchOverpass(retryQuery);
+    const retryData = await fetchOverpass(allQuery(expanded));
     results = parseElements(retryData.elements, lat, lon);
   }
 
