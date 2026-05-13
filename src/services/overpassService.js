@@ -172,20 +172,45 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// 多端點並行競速：只用健康端點，最快成功的回傳
-// 第一輪 6 秒，第二輪 10 秒（總計最多 ~16 秒）
+// 透過 Vercel Edge 代理（命中 CDN 快取時瞬回）
+async function fetchFromProxy(query, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  // 用 GET + URL query 才能讓 Vercel Edge 快取生效
+  const url = `/api/overpass?q=${encodeURIComponent(query)}`;
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`Proxy HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    clearTimeout(timer);
+    throw err;
+  }
+}
+
+// 多端點並行競速：優先走 Vercel Edge 代理（CDN 快取），失敗回退到公共 Overpass 端點
 async function fetchOverpass(query) {
   return enqueueRequest(async () => {
-    const endpoints = getHealthyEndpoints();
-    // 第一輪：6 秒 timeout
+    // === 第 1 優先：Vercel Edge 代理（CDN 快取命中時 < 100ms）===
     try {
-      return await Promise.any(
+      return await fetchFromProxy(query, 8000);
+    } catch {
+      // 代理失敗（部署前/cold start/錯誤），回退到直連
+    }
+
+    // === 第 2 優先：直連公共 Overpass 端點，第一輪 6 秒 ===
+    const endpoints = getHealthyEndpoints();
+    try {
+      const res = await Promise.any(
         endpoints.map((ep) => fetchFromEndpoint(ep, query, 6000))
       );
+      return res;
     } catch {
-      // 靜默失敗，直接進入第二輪
+      // 進入第二輪
     }
-    // 第二輪：10 秒 timeout，使用所有端點（含不健康的）
+
+    // === 第 3 優先：所有端點再試一次，第二輪 10 秒 ===
     try {
       return await Promise.any(
         OVERPASS_ENDPOINTS.map((ep) => fetchFromEndpoint(ep, query, 10000))
@@ -239,7 +264,7 @@ function parseElements(elements, userLat, userLon) {
     .sort((a, b) => a.distance - b.distance);
 }
 
-// 根據分類 ID 建構 Overpass QL 查詢（搜 node + way + relation）
+// 根據分類 ID 建構 Overpass QL 查詢（只搜 node + way，省略命中率極低的 relation）
 function buildQuery(categoryId, lat, lon, radius) {
   const category = CATEGORIES.find((c) => c.id === categoryId);
   if (!category) return null;
@@ -248,8 +273,7 @@ function buildQuery(categoryId, lat, lon, radius) {
     .map(({ key, values }) =>
       values.map((v) =>
         `node["${key}"="${v}"](around:${radius},${lat},${lon});\n` +
-        `way["${key}"="${v}"](around:${radius},${lat},${lon});\n` +
-        `relation["${key}"="${v}"](around:${radius},${lat},${lon});`
+        `way["${key}"="${v}"](around:${radius},${lat},${lon});`
       ).join('\n')
     )
     .join('\n');
