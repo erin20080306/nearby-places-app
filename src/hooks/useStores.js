@@ -10,18 +10,31 @@ export function useStores() {
   const debounceRef = useRef(null);
   const lastArgsRef = useRef(null);
 
-  // 內部實際執行搜尋
+  const timeoutRef = useRef(null);
+
+  // 內部實際執行搜尋（含 20 秒整體超時）
   const executeSearch = useCallback(async (categoryId, lat, lon, radius) => {
     // 取消前一個進行中的請求
     if (abortRef.current) abortRef.current.abort = true;
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     const token = { abort: false };
     abortRef.current = token;
 
     setLoading(true);
     setError(null);
 
+    // 20 秒整體超時，避免無限等待
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutRef.current = setTimeout(() => {
+        reject(new Error('搜尋超時，請點擊重新搜尋或縮小搜尋範圍'));
+      }, 20000);
+    });
+
     try {
-      const results = await fetchNearbyStores(categoryId, lat, lon, radius);
+      const results = await Promise.race([
+        fetchNearbyStores(categoryId, lat, lon, radius),
+        timeoutPromise,
+      ]);
       if (!token.abort) {
         setStores(results);
       }
@@ -31,6 +44,7 @@ export function useStores() {
         setStores([]);
       }
     } finally {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (!token.abort) setLoading(false);
     }
   }, []);

@@ -137,27 +137,25 @@ function delay(ms) {
 }
 
 // 多端點並行競速：只用健康端點，最快成功的回傳
-// 第一輪 12 秒，等待 2 秒後重試第二輪 20 秒
+// 第一輪 6 秒，第二輪 10 秒（總計最多 ~16 秒）
 async function fetchOverpass(query) {
   return enqueueRequest(async () => {
     const endpoints = getHealthyEndpoints();
-    // 第一輪：12 秒 timeout
+    // 第一輪：6 秒 timeout
     try {
       return await Promise.any(
-        endpoints.map((ep) => fetchFromEndpoint(ep, query, 12000))
+        endpoints.map((ep) => fetchFromEndpoint(ep, query, 6000))
       );
     } catch {
-      console.warn('Overpass 第一輪全部失敗，等待後重試...');
+      // 靜默失敗，直接進入第二輪
     }
-    // 延遲 2 秒再重試，避免連續轟炸
-    await delay(2000);
-    // 第二輪：20 秒 timeout，使用所有端點（含不健康的）
+    // 第二輪：10 秒 timeout，使用所有端點（含不健康的）
     try {
       return await Promise.any(
-        OVERPASS_ENDPOINTS.map((ep) => fetchFromEndpoint(ep, query, 20000))
+        OVERPASS_ENDPOINTS.map((ep) => fetchFromEndpoint(ep, query, 10000))
       );
     } catch {
-      throw new Error('伺服器忙碌中，請稍後再試');
+      throw new Error('伺服器忙碌中，請點擊重新搜尋');
     }
   });
 }
