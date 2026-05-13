@@ -23,6 +23,7 @@ export default function HomePage({
   storesLoading,
   storesError,
   searchStores,
+  searchStoresImmediate,
   favorites,
   membership,
 }) {
@@ -51,7 +52,7 @@ export default function HomePage({
     }
   }, [category, radius]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 搜尋地點
+  // 搜尋地點（使用者主動搜尋，用 immediate 版本）
   const handleSearch = useCallback(async (query) => {
     setSearchLoading(true);
     setSearchError(null);
@@ -61,24 +62,24 @@ export default function HomePage({
         const loc = { lat: results[0].lat, lon: results[0].lon };
         setMapCenter(loc);
         flyToRef.current?.(loc.lat, loc.lon, 15);
-        searchStores(category, loc.lat, loc.lon, radius);
+        (searchStoresImmediate || searchStores)(category, loc.lat, loc.lon, radius);
       }
     } catch (err) {
       setSearchError(err.message);
     } finally {
       setSearchLoading(false);
     }
-  }, [category, radius, searchStores]);
+  }, [category, radius, searchStores, searchStoresImmediate]);
 
   // 重新定位
   const handleRelocate = () => {
     relocate();
   };
 
-  // 重新搜尋目前位置
+  // 重新搜尋目前位置（手動觸發，不 debounce）
   const handleRefresh = () => {
     if (mapCenter) {
-      searchStores(category, mapCenter.lat, mapCenter.lon, radius);
+      (searchStoresImmediate || searchStores)(category, mapCenter.lat, mapCenter.lon, radius);
     }
   };
 
@@ -110,7 +111,11 @@ export default function HomePage({
 
       {/* 非定位錯誤提示 */}
       {(searchError || storesError) && (
-        <ErrorBanner message={searchError || storesError} onDismiss={() => setSearchError(null)} />
+        <ErrorBanner
+          message={searchError || storesError}
+          onDismiss={() => setSearchError(null)}
+          onRetry={handleRefresh}
+        />
       )}
 
       {/* 分類按鈕 */}

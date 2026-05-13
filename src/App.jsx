@@ -86,6 +86,7 @@ export default function App() {
           storesLoading={storeHook.loading}
           storesError={storeHook.error}
           searchStores={storeHook.search}
+          searchStoresImmediate={storeHook.searchImmediate}
           favorites={favorites}
           membership={membershipProps}
         />
