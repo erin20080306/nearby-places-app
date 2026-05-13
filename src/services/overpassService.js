@@ -41,10 +41,45 @@ function getHealthyEndpoints() {
 }
 
 // === 快取機制：相同區域 + 分類 10 分鐘內不重複查詢 ===
-const cache = new Map();
+// 持久化到 localStorage，返回用戶可瞬間看到上次資料
 const CACHE_TTL = 10 * 60 * 1000; // 10 分鐘（新鮮）
-const CACHE_STALE_TTL = 30 * 60 * 1000; // 30 分鐘（過期但可用作 fallback）
+const CACHE_STALE_TTL = 60 * 60 * 1000; // 60 分鐘（過期但可用作 fallback，已延長）
 const CACHE_MAX_SIZE = 200;
+const LS_CACHE_KEY = 'np_overpass_cache_v1';
+
+// 從 localStorage 載入快取（首次載入時）
+function loadCacheFromStorage() {
+  try {
+    const raw = localStorage.getItem(LS_CACHE_KEY);
+    if (!raw) return new Map();
+    const arr = JSON.parse(raw);
+    return new Map(arr);
+  } catch {
+    return new Map();
+  }
+}
+
+const cache = loadCacheFromStorage();
+
+// 將快取持久化到 localStorage（throttle 避免頻繁寫入）
+let saveTimer = null;
+function persistCache() {
+  if (saveTimer) return;
+  saveTimer = setTimeout(() => {
+    try {
+      // 只保存還在 stale TTL 內的，避免存無用資料
+      const now = Date.now();
+      const valid = [];
+      for (const [k, v] of cache.entries()) {
+        if (now - v.ts <= CACHE_STALE_TTL) valid.push([k, v]);
+      }
+      localStorage.setItem(LS_CACHE_KEY, JSON.stringify(valid));
+    } catch {
+      // localStorage 滿或其他錯誤，靜默忽略
+    }
+    saveTimer = null;
+  }, 1000);
+}
 
 function getCacheKey(lat, lon, radius, suffix) {
   // 將座標四捨五入到小數 3 位（約 111 公尺），相近位置共用快取
@@ -78,6 +113,7 @@ function setCache(key, data) {
     const oldest = cache.keys().next().value;
     cache.delete(oldest);
   }
+  persistCache();
 }
 
 // === 全域請求佇列：避免同時發出太多 Overpass 請求 ===
@@ -219,7 +255,7 @@ function buildQuery(categoryId, lat, lon, radius) {
     .join('\n');
 
   return `
-[out:json][timeout:20];
+[out:json][timeout:10];
 (
   ${filters}
 );
@@ -277,7 +313,7 @@ export async function fetchAllNearby(lat, lon, radius = 1000) {
   if (cached) return cached;
 
   const allQuery = (r) => `
-[out:json][timeout:20];
+[out:json][timeout:10];
 (
   node["amenity"~"restaurant|fast_food|cafe|bakery|food_court|fuel|parking|clinic|doctors|dentist|pharmacy|hospital|karaoke_box|karaoke"](around:${r},${lat},${lon});
   way["amenity"~"restaurant|fast_food|cafe|bakery|food_court|fuel|parking|clinic|doctors|dentist|pharmacy|hospital|karaoke_box|karaoke"](around:${r},${lat},${lon});
