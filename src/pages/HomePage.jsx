@@ -53,13 +53,20 @@ export default function HomePage({
   }, [category, radius]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 搜尋地點（使用者主動搜尋，用 immediate 版本）
-  const handleSearch = useCallback(async (query) => {
+  const handleSearch = useCallback(async (query, coords) => {
     setSearchLoading(true);
     setSearchError(null);
     try {
-      const results = await searchLocation(query);
-      if (results.length > 0) {
-        const loc = { lat: results[0].lat, lon: results[0].lon };
+      let loc = coords && Number.isFinite(coords.lat) && Number.isFinite(coords.lon)
+        ? coords
+        : null;
+      if (!loc) {
+        const results = await searchLocation(query);
+        if (results.length > 0) {
+          loc = { lat: results[0].lat, lon: results[0].lon };
+        }
+      }
+      if (loc) {
         setMapCenter(loc);
         flyToRef.current?.(loc.lat, loc.lon, 15);
         (searchStoresImmediate || searchStores)(category, loc.lat, loc.lon, radius);

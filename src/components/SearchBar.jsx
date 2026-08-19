@@ -61,7 +61,8 @@ const SearchBar = forwardRef(function SearchBar({ onSearch, loading = false }, r
     saveHistory(label);
     setFocused(false);
     setSuggestions([]);
-    onSearch(sug.displayName);
+    // 建議項已含座標，直接帶入避免再次地理編碼（更快也更可靠）
+    onSearch(sug.displayName, { lat: sug.lat, lon: sug.lon });
   };
 
   const handleHistoryClick = (item) => {
